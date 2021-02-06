@@ -3,7 +3,6 @@ POST http://localhost:7071/api/blog
 Content-Type: application/json
 
 {
-    "BlogId": 1,
     "Url": "http://example.com"
 }
 
@@ -14,7 +13,6 @@ Content-Type: application/json
 
 {
     "BlogId": 1,
-    "PostId": 1,
     "Title": "Hello World",
     "Content": "This is the content"
 }

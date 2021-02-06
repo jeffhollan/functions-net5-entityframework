@@ -38,8 +38,6 @@ namespace Hollan.Function
             context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
 
             var blog = JsonConvert.DeserializeObject<Blog>(req.Body);
-
-            context.Logger.LogInformation(req.Body);
             context.Logger.LogInformation(JsonConvert.SerializeObject(blog));
 
             var entity = await _context.Blogs.AddAsync(blog, CancellationToken.None);
