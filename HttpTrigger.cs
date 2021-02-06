@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
@@ -21,24 +22,41 @@ namespace Hollan.Function
         [FunctionName("GetPosts")]
         public HttpResponseData GetPosts(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "posts")] HttpRequestData req,
-            ILogger log)
+            FunctionExecutionContext context)
         {
-            log.LogInformation("C# HTTP GET/posts trigger function processed a request.");
+            context.Logger.LogInformation("C# HTTP GET/posts trigger function processed a request.");
 
-            var postsArray = _context.Posts.OrderBy(p => p.Title).ToArray();
-            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(postsArray));
+           var postsArray = _context.Posts.OrderBy(p => p.Title).ToArray();
+           return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(postsArray));
         }
 
-        [FunctionName("PostBlogSite")]
+        [FunctionName("CreateBlog")]
         public async Task<HttpResponseData> CreateBlogAsync(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "blog")] HttpRequestData req,
-            CancellationToken cts,
-            ILogger log)
+            FunctionExecutionContext context)
         {
-            log.LogInformation("C# HTTP POST/blog trigger function processed a request.");
+            context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
 
-            var entity = await _context.Blogs.AddAsync(new Blog(), cts);
-            await _context.SaveChangesAsync(cts);
+            var blog = JsonConvert.DeserializeObject<Blog>(req.Body);
+
+            context.Logger.LogInformation(req.Body);
+            context.Logger.LogInformation(JsonConvert.SerializeObject(blog));
+
+            var entity = await _context.Blogs.AddAsync(blog, CancellationToken.None);
+            await _context.SaveChangesAsync(CancellationToken.None);
+            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(entity.Entity));
+        }
+
+        [FunctionName("CreatePost")]
+        public async Task<HttpResponseData> CreatePostAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "post")] HttpRequestData req,
+            FunctionExecutionContext context)
+        {
+            context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
+
+            var post = JsonConvert.DeserializeObject<Post>(req.Body);
+            var entity = await _context.Posts.AddAsync(post);
+            await _context.SaveChangesAsync(CancellationToken.None);
             return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(entity.Entity));
         }
     }

@@ -14,8 +14,6 @@ namespace Hollan.Function
         static async Task Main(string[] args)
         {
             string sqlConnectionString = Environment.GetEnvironmentVariable("SqlConnectionString");
-            Debug.WriteLine(sqlConnectionString);
-
 // #if DEBUG
 //             Debugger.Launch();
 // #endif
