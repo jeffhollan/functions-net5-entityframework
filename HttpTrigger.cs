@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
@@ -37,7 +38,7 @@ namespace Hollan.Function
         {
             context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
 
-            var blog = JsonConvert.DeserializeObject<Blog>(req.Body);
+            var blog = JsonConvert.DeserializeObject<Blog>(Encoding.UTF8.GetString(req.Body.Value.ToArray()));
             context.Logger.LogInformation(JsonConvert.SerializeObject(blog));
 
             var entity = await _context.Blogs.AddAsync(blog, CancellationToken.None);
@@ -52,7 +53,7 @@ namespace Hollan.Function
         {
             context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
 
-            var post = JsonConvert.DeserializeObject<Post>(req.Body);
+            var post = JsonConvert.DeserializeObject<Post>(Encoding.UTF8.GetString(req.Body.Value.ToArray()));
             var entity = await _context.Posts.AddAsync(post);
             await _context.SaveChangesAsync(CancellationToken.None);
             return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(entity.Entity));
