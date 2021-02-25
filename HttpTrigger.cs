@@ -1,12 +1,11 @@
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Pipeline;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -20,43 +19,55 @@ namespace Hollan.Function
             _context = context;
         }
 
-        [FunctionName("GetPosts")]
+        [Function("GetPosts")]
         public HttpResponseData GetPosts(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "posts")] HttpRequestData req,
-            FunctionExecutionContext context)
+            FunctionContext context)
         {
-            context.Logger.LogInformation("C# HTTP GET/posts trigger function processed a request.");
+           var logger = context.GetLogger("GetPosts");
+           logger.LogInformation("C# HTTP GET/posts trigger function processed a request.");
 
            var postsArray = _context.Posts.OrderBy(p => p.Title).ToArray();
-           return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(postsArray));
+           var response = req.CreateResponse(HttpStatusCode.OK);
+           response.WriteString(JsonConvert.SerializeObject(postsArray));
+           return response;
         }
 
-        [FunctionName("CreateBlog")]
+        [Function("CreateBlog")]
         public async Task<HttpResponseData> CreateBlogAsync(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "blog")] HttpRequestData req,
-            FunctionExecutionContext context)
+            FunctionContext context)
         {
-            context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
+            var logger = context.GetLogger("CreateBlog");
+            logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
 
-            var blog = JsonConvert.DeserializeObject<Blog>(Encoding.UTF8.GetString(req.Body.Value.ToArray()));
-            context.Logger.LogInformation(JsonConvert.SerializeObject(blog));
+            var blog = JsonConvert.DeserializeObject<Blog>(await new StreamReader(req.Body).ReadToEndAsync());
+            logger.LogInformation(JsonConvert.SerializeObject(blog));
 
             var entity = await _context.Blogs.AddAsync(blog, CancellationToken.None);
             await _context.SaveChangesAsync(CancellationToken.None);
-            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(entity.Entity));
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.WriteString(JsonConvert.SerializeObject(entity.Entity));
+            return response;
         }
 
-        [FunctionName("CreatePost")]
+        [Function("CreatePost")]
         public async Task<HttpResponseData> CreatePostAsync(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "post")] HttpRequestData req,
-            FunctionExecutionContext context)
+            FunctionContext context)
         {
-            context.Logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
-
-            var post = JsonConvert.DeserializeObject<Post>(Encoding.UTF8.GetString(req.Body.Value.ToArray()));
+            var logger = context.GetLogger("CreatePost");
+            logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
+               
+            var post = JsonConvert.DeserializeObject<Post>(await new StreamReader(req.Body).ReadToEndAsync());
+            
             var entity = await _context.Posts.AddAsync(post);
             await _context.SaveChangesAsync(CancellationToken.None);
-            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(entity.Entity));
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.WriteString(JsonConvert.SerializeObject(entity.Entity));
+            return response;
         }
     }
 }
