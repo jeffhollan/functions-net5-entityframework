@@ -8,11 +8,10 @@ Content-Type: application/json
 
 ### Create Post
 
-POST http://localhost:7071/api/post
+POST http://localhost:7071/api/blog/1/post
 Content-Type: application/json
 
 {
-    "BlogId": 1,
     "Title": "Hello World",
     "Content": "This is the content"
 }

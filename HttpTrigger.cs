@@ -54,13 +54,15 @@ namespace Hollan.Function
 
         [Function("CreatePost")]
         public async Task<HttpResponseData> CreatePostAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "post")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "blog/{id}/post")] HttpRequestData req,
+            int id,
             FunctionContext context)
         {
             var logger = context.GetLogger("CreatePost");
             logger.LogInformation("C# HTTP POST/blog trigger function processed a request.");
                
             var post = JsonConvert.DeserializeObject<Post>(await new StreamReader(req.Body).ReadToEndAsync());
+            post.BlogId = id;
             
             var entity = await _context.Posts.AddAsync(post);
             await _context.SaveChangesAsync(CancellationToken.None);
